@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SignalRChat.BackgroundServices;
 using SignalRChat.Hubs;
 
 namespace SignalRChat
@@ -26,6 +27,7 @@ namespace SignalRChat
         {
             services.AddRazorPages();
             services.AddSignalR();
+            services.AddHostedService<FakeUsersMessagesBackgroundService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
