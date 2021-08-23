@@ -1,41 +1,60 @@
 import ws from 'k6/ws';
+import http from 'k6/http';
 import { check } from 'k6';
 
+var urlBase = "https://localhost:5001";
+var huburl = "chatHub";
+var webSocketBase = "wss://localhost:5001";
+
 export default function () {
-  const url = 'ws://echo.websocket.org';
-  const params = { tags: { my_tag: 'hello' } };
+  // Get the connection id to use in the web socket connect
+  var res = http.post(`${urlBase}/${huburl}/negotiate`, null, {
+    "responseType": "text"
+  }
+  );
+  var connectionId = res.json()["connectionId"];
 
-  const response = ws.connect(url, params, function (socket) {
+  var url = `${webSocketBase}/${huburl}?id=${connectionId}`;
+
+  var response = ws.connect(url, {
+    headers: {
+      // "Cookie": `${authCookieName}=${authCookie}`,
+      "Origin": urlBase,
+    }
+  }, function (socket) {
     socket.on('open', function open() {
-      console.log('connected');
-      socket.send(Date.now());
-
-      socket.setInterval(function timeout() {
-        socket.ping();
-        console.log('Pinging every 1sec (setInterval test)');
-      }, 1000);
+      // Once socket is connected send protocol request
+      socket.send('{"protocol":"json","version":1})\x1e');
+      console.log('sent protocol request');
     });
 
-    socket.on('ping', () => console.log('PING!'));
-    socket.on('pong', () => console.log('PONG!'));
-    socket.on('pong', () => {
-      // Multiple event handlers on the same event
-      console.log('OTHER PONG!');
+    socket.on('message', function (message) {
+      switch (message) {
+        case '{}\x1e':
+          // This is the protocol confirmation
+          break;
+        case '{"type":6}\x1e':
+          // Received handshake
+          break;
+        default:
+          // should check that the JSON contains type === 1
+          console.log(`Received message: ${message}`);
+      }
     });
 
-    socket.on('close', () => console.log('disconnected'));
-
-    socket.on('error', (e) => {
-      if (e.error() != 'websocket: close sent') {
+    socket.on('error', function (e) {
+      if (e.error() != "websocket: close sent") {
         console.log('An unexpected error occurred: ', e.error());
       }
     });
 
-    // socket.setTimeout(function () {
-    //   console.log('2 seconds passed, closing the socket');
-    //   socket.close();
-    // }, 2000);
+    socket.setTimeout(function () {
+      console.log('60 seconds passed, closing the socket');
+      socket.close();
+    }, 60000);
   });
 
-  check(response, { 'status is 101': (r) => r && r.status === 101 });
+  check(response, { "status is 101": (r) => r && r.status === 101 });
+
 }
+

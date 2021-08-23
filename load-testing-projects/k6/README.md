@@ -8,6 +8,7 @@ Here are some useful links from documentation:
 - Checks: [link](https://k6.io/docs/using-k6/checks/)
 - Cookies: [link](https://k6.io/docs/using-k6/cookies/) -- Maybe not necessary
 - Websockets: [link](https://k6.io/docs/using-k6/protocols/websockets/)
+- SignalR issue: [link](https://community.k6.io/t/bad-handshake-issue-when-using-secure-web-sockets/238/13)
 
 
 # some concepts
